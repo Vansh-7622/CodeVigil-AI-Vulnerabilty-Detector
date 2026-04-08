@@ -5,10 +5,10 @@ CodeVigil - FastAPI Backend
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from scanner import scan_code
+from scanner import scan_code, SUPPORTED_LANGUAGES
 from llm_engine import enrich_all
 
-app = FastAPI(title="CodeVigil", version="1.0.0")
+app = FastAPI(title="CodeVigil", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,8 +38,8 @@ def health():
 @app.post("/scan", response_model=ScanResponse)
 async def scan_code_endpoint(req: ScanRequest):
     lang = req.language.lower().strip()
-    if lang not in ("python", "javascript"):
-        raise HTTPException(400, "Supported languages: python, javascript")
+    if lang not in SUPPORTED_LANGUAGES:
+        raise HTTPException(400, f"Supported languages: {', '.join(SUPPORTED_LANGUAGES)}")
 
     vulns = scan_code(req.code, lang)
     enriched = await enrich_all(vulns, req.code, lang)
@@ -70,16 +70,15 @@ async def scan_file_endpoint(
     # Auto-detect language from extension
     if not language:
         name = file.filename or ""
-        if name.endswith(".py"):
-            language = "python"
-        elif name.endswith((".js", ".jsx", ".ts", ".tsx")):
-            language = "javascript"
-        else:
-            raise HTTPException(400, "Could not detect language. Pass language=python or javascript.")
+        ext_map = {".py": "python", ".js": "javascript", ".jsx": "javascript", ".ts": "typescript", ".tsx": "typescript", ".java": "java", ".c": "c", ".cpp": "cpp", ".h": "c", ".hpp": "cpp"}
+        ext = "." + name.rsplit(".", 1)[-1] if "." in name else ""
+        language = ext_map.get(ext)
+        if not language:
+            raise HTTPException(400, f"Could not detect language. Pass language param. Supported: {', '.join(SUPPORTED_LANGUAGES)}")
 
     language = language.lower().strip()
-    if language not in ("python", "javascript"):
-        raise HTTPException(400, "Supported languages: python, javascript")
+    if language not in SUPPORTED_LANGUAGES:
+        raise HTTPException(400, f"Supported languages: {', '.join(SUPPORTED_LANGUAGES)}")
 
     vulns = scan_code(code, language)
     enriched = await enrich_all(vulns, code, language)
