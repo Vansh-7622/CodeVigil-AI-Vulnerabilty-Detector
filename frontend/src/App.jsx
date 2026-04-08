@@ -1,15 +1,15 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import "./app.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const LANGS = [
-  { id: "python", label: "Python", icon: "🐍", color: "#3572A5", ext: "main.py", mono: "python" },
-  { id: "javascript", label: "JS", icon: "⚡", color: "#f1e05a", ext: "app.js", mono: "javascript" },
-  { id: "typescript", label: "TS", icon: "🔷", color: "#3178c6", ext: "app.ts", mono: "typescript" },
-  { id: "java", label: "Java", icon: "☕", color: "#b07219", ext: "Main.java", mono: "java" },
-  { id: "c", label: "C/C++", icon: "⚙️", color: "#555555", ext: "main.c", mono: "c" },
+  { id: "python", label: "Python", icon: "🐍", color: "#3572A5", ext: "main.py", mono: "python", desc: "Web backends, AI/ML, scripting" },
+  { id: "javascript", label: "JavaScript", icon: "⚡", color: "#f1e05a", ext: "app.js", mono: "javascript", desc: "Frontend, Node.js, full-stack" },
+  { id: "typescript", label: "TypeScript", icon: "🔷", color: "#3178c6", ext: "app.ts", mono: "typescript", desc: "Type-safe JavaScript" },
+  { id: "java", label: "Java", icon: "☕", color: "#b07219", ext: "Main.java", mono: "java", desc: "Enterprise, Android, backends" },
+  { id: "c", label: "C / C++", icon: "⚙️", color: "#555555", ext: "main.c", mono: "c", desc: "Systems, embedded, low-level" },
 ];
 
 const SAMPLES = {
@@ -140,16 +140,153 @@ int main() {
 };
 
 const SEV = {
-  critical: { color: "#ef4444", bg: "rgba(239,68,68,0.1)", label: "CRITICAL" },
-  high:     { color: "#f97316", bg: "rgba(249,115,22,0.1)", label: "HIGH" },
-  medium:   { color: "#eab308", bg: "rgba(234,179,8,0.1)",  label: "MEDIUM" },
-  low:      { color: "#3b82f6", bg: "rgba(59,130,246,0.1)", label: "LOW" },
-  info:     { color: "#94a3b8", bg: "rgba(148,163,184,0.1)", label: "INFO" },
+  critical: { color: "#ef4444", bg: "rgba(239,68,68,0.12)", label: "CRITICAL" },
+  high:     { color: "#f97316", bg: "rgba(249,115,22,0.12)", label: "HIGH" },
+  medium:   { color: "#eab308", bg: "rgba(234,179,8,0.12)",  label: "MEDIUM" },
+  low:      { color: "#3b82f6", bg: "rgba(59,130,246,0.12)", label: "LOW" },
+  info:     { color: "#94a3b8", bg: "rgba(148,163,184,0.12)", label: "INFO" },
 };
 
-export default function App() {
-  const [lang, setLang] = useState("python");
-  const [code, setCode] = useState(SAMPLES.python);
+const FEATURES = [
+  { icon: "🧠", title: "AI-Powered Analysis", desc: "Llama 3 explains each vulnerability in plain English with real-world impact scenarios" },
+  { icon: "🌳", title: "AST Deep Scanning", desc: "Python uses Abstract Syntax Tree parsing — not just regex — for accurate detection" },
+  { icon: "🔧", title: "Auto-Fix Suggestions", desc: "One-click secure code alternatives for every vulnerability found" },
+  { icon: "🌐", title: "5 Languages", desc: "Python, JavaScript, TypeScript, Java, and C/C++ with 60+ CWE patterns" },
+  { icon: "📋", title: "CWE Classification", desc: "Industry-standard Common Weakness Enumeration IDs for every finding" },
+  { icon: "⚡", title: "Instant Results", desc: "Fast scanning powered by Groq's inference engine — results in seconds" },
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE 1: LANDING
+   ═══════════════════════════════════════════════════════════════ */
+function LandingPage({ onStart }) {
+  return (
+    <div className="landing">
+      <div className="landing-bg">
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+        <div className="orb orb-3" />
+        <div className="grid-overlay" />
+      </div>
+
+      <nav className="landing-nav">
+        <div className="nav-logo">
+          <div className="nav-shield">🛡️</div>
+          <span className="nav-brand"><span>Code</span><span className="accent">Vigil</span></span>
+        </div>
+        <div className="nav-links">
+          <a href="#features">Features</a>
+          <a href="#languages">Languages</a>
+          <a href="https://github.com/Vansh-7622/CodeVigil-AI-Vulnerabilty-Detector" target="_blank" rel="noreferrer">GitHub ↗</a>
+        </div>
+      </nav>
+
+      <section className="hero">
+        <div className="hero-badge">
+          <span className="badge-dot" /> AI-Powered Security Scanner
+        </div>
+        <h1 className="hero-title">
+          Find vulnerabilities<br />
+          <span className="hero-gradient">before hackers do.</span>
+        </h1>
+        <p className="hero-sub">
+          CodeVigil scans your code using AST analysis and Llama 3 AI to detect security flaws,
+          explain their impact, and suggest fixes — across 5 programming languages.
+        </p>
+        <div className="hero-actions">
+          <button className="cta-primary" onClick={onStart}>
+            Start Scanning →
+          </button>
+          <a className="cta-secondary" href="https://github.com/Vansh-7622/CodeVigil-AI-Vulnerabilty-Detector" target="_blank" rel="noreferrer">
+            View on GitHub
+          </a>
+        </div>
+        <div className="hero-stats">
+          <div className="hero-stat"><span className="stat-num">60+</span><span className="stat-label">CWE Patterns</span></div>
+          <div className="stat-divider" />
+          <div className="hero-stat"><span className="stat-num">5</span><span className="stat-label">Languages</span></div>
+          <div className="stat-divider" />
+          <div className="hero-stat"><span className="stat-num">AI</span><span className="stat-label">Powered Fixes</span></div>
+        </div>
+      </section>
+
+      <section className="features" id="features">
+        <h2 className="section-title">How it works</h2>
+        <div className="features-grid">
+          {FEATURES.map((f, i) => (
+            <div key={i} className="feature-card" style={{ animationDelay: `${i * 0.1}s` }}>
+              <div className="feature-icon">{f.icon}</div>
+              <h3>{f.title}</h3>
+              <p>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="lang-showcase" id="languages">
+        <h2 className="section-title">Supported Languages</h2>
+        <div className="lang-cards">
+          {LANGS.map((l, i) => (
+            <div key={l.id} className="lang-card" style={{ animationDelay: `${i * 0.08}s` }} onClick={onStart}>
+              <div className="lang-card-icon">{l.icon}</div>
+              <div className="lang-card-dot" style={{ background: l.color }} />
+              <h4>{l.label}</h4>
+              <p>{l.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <footer className="landing-footer">
+        <p>Built by <strong>Vansh Sorathiya</strong> • PDEU B.Tech CSE 2027</p>
+        <p className="footer-tech">FastAPI · React · Monaco Editor · Llama 3 via Groq · Python AST</p>
+      </footer>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE 2: LANGUAGE SELECTION
+   ═══════════════════════════════════════════════════════════════ */
+function LanguagePage({ onSelect, onBack }) {
+  return (
+    <div className="lang-page">
+      <div className="landing-bg">
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+      </div>
+      <button className="back-btn" onClick={onBack}>← Back</button>
+      <div className="lang-page-content">
+        <h2>Choose your language</h2>
+        <p className="lang-page-sub">Select the language of the code you want to scan</p>
+        <div className="lang-select-grid">
+          {LANGS.map((l, i) => (
+            <button
+              key={l.id}
+              className="lang-select-card"
+              style={{ animationDelay: `${i * 0.08}s` }}
+              onClick={() => onSelect(l.id)}
+            >
+              <div className="lsc-icon">{l.icon}</div>
+              <div className="lsc-info">
+                <h3>{l.label}</h3>
+                <p>{l.desc}</p>
+              </div>
+              <div className="lsc-dot" style={{ background: l.color }} />
+              <span className="lsc-arrow">→</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE 3: SCANNER
+   ═══════════════════════════════════════════════════════════════ */
+function ScannerPage({ lang, onBack, onChangeLang }) {
+  const [code, setCode] = useState(SAMPLES[lang] || "");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -160,6 +297,14 @@ export default function App() {
   const decRef = useRef([]);
 
   const langInfo = LANGS.find((l) => l.id === lang);
+
+  useEffect(() => {
+    setCode(SAMPLES[lang] || "");
+    setResults(null);
+    setSelected(null);
+    setFixes({});
+    if (editorRef.current) decRef.current = editorRef.current.deltaDecorations(decRef.current, []);
+  }, [lang]);
 
   const onMount = (editor, monaco) => {
     editorRef.current = editor;
@@ -190,8 +335,7 @@ export default function App() {
           isWholeLine: true,
           className: `vuln-line-${v.severity}`,
           glyphMarginClassName: `vuln-glyph-${v.severity}`,
-          overviewRuler: { color: SEV[v.severity]?.color || "#94a3b8", position: m.editor.OverviewRulerLane.Full },
-          minimap: { color: SEV[v.severity]?.color || "#94a3b8", position: m.editor.MinimapPosition.Inline },
+          overviewRuler: { color: SEV[v.severity]?.color, position: m.editor.OverviewRulerLane.Full },
         },
       }))
     );
@@ -213,11 +357,6 @@ export default function App() {
     finally { setLoading(false); }
   }, [code, lang, markVulns]);
 
-  const switchLang = (id) => {
-    setLang(id); setCode(SAMPLES[id] || ""); setResults(null); setSelected(null); setFixes({});
-    if (editorRef.current) decRef.current = editorRef.current.deltaDecorations(decRef.current, []);
-  };
-
   const jumpTo = (line) => {
     if (editorRef.current) {
       editorRef.current.revealLineInCenter(line);
@@ -229,43 +368,42 @@ export default function App() {
   const vulns = results?.vulnerabilities || [];
 
   return (
-    <div className="app">
-      <header className="header">
-        <div className="header-left">
-          <div className="logo">
-            <div className="logo-shield">🛡️</div>
-            <div className="logo-text"><span>Code</span><span>Vigil</span></div>
-            <span className="logo-version">v2.0</span>
-          </div>
-          <div className="header-stats">
-            <span><span className="stat-val">5</span> Languages</span>
-            <span><span className="stat-val">60+</span> CWE Patterns</span>
-            <span><span className="stat-val">AI</span> Powered</span>
+    <div className="scanner-page">
+      {/* Scanner Header */}
+      <header className="scanner-header">
+        <div className="sh-left">
+          <button className="back-btn-small" onClick={onBack}>←</button>
+          <div className="sh-logo">
+            <span className="sh-shield">🛡️</span>
+            <span className="sh-brand">Code<span className="accent">Vigil</span></span>
           </div>
         </div>
-        <div className="header-right">
+        <div className="sh-center">
           <div className="lang-pills">
             {LANGS.map((l) => (
-              <button key={l.id} className={`lang-pill ${lang === l.id ? "active" : ""}`} onClick={() => switchLang(l.id)}>
+              <button key={l.id} className={`lang-pill ${lang === l.id ? "active" : ""}`} onClick={() => onChangeLang(l.id)}>
                 <span className="lang-dot" style={{ background: l.color }} />
                 {l.label}
               </button>
             ))}
           </div>
+        </div>
+        <div className="sh-right">
           <button className={`scan-btn ${loading ? "scanning" : ""}`} onClick={scan} disabled={loading}>
             {loading ? <><span className="spinner" /> Scanning...</> : <>🔍 Scan Code</>}
           </button>
         </div>
       </header>
 
-      <div className="main">
+      {/* Scanner Body */}
+      <div className="scanner-body">
         <div className="editor-panel">
           <div className="panel-tab-bar">
             <div className="file-tab">
               <span className="dot" style={{ background: langInfo?.color }} />
               {langInfo?.ext}
             </div>
-            <span className="panel-meta">{code.split("\n").length} lines</span>
+            <span className="panel-meta">{code.split("\n").length} lines • {langInfo?.label}</span>
           </div>
           <div className="editor-wrapper">
             <Editor
@@ -294,22 +432,22 @@ export default function App() {
         <div className="results-panel">
           <div className="results-header">
             <span>🛡️ Vulnerability Report</span>
-            {results && <span style={{ color: "#ef4444", fontFamily: "JetBrains Mono" }}>{results.total_issues} found</span>}
+            {results && <span className="rh-count">{results.total_issues} found</span>}
           </div>
           <div className="results-content">
             {!results && !loading && !error && (
               <div className="empty-state">
                 <div className="empty-shield">🛡️</div>
                 <h3>Ready to scan</h3>
-                <p>Paste your code or use a sample, then click <strong style={{ color: "#ef4444" }}>Scan Code</strong> to detect vulnerabilities with AI-powered analysis.</p>
+                <p>Paste your {langInfo?.label} code or use the sample, then click <strong className="accent">Scan Code</strong></p>
               </div>
             )}
-            {error && <div className="error-box"><strong>Error:</strong> {error}<div className="hint">Ensure backend is running at {API_URL}</div></div>}
+            {error && <div className="error-box"><strong>Error:</strong> {error}<div className="hint">Make sure backend is running at {API_URL}. First request may take ~50s on free tier.</div></div>}
             {loading && (
               <div className="loading-state">
                 <div className="loading-ring" />
-                <p>Scanning for vulnerabilities...</p>
-                <p className="sub">AST analysis + AI explanations via Llama 3</p>
+                <p>Scanning {langInfo?.label} code...</p>
+                <p className="sub">AST analysis + AI explanations</p>
               </div>
             )}
             {results && !loading && (
@@ -317,8 +455,8 @@ export default function App() {
                 <div className="summary-card">
                   <div className="summary-total">
                     {results.total_issues === 0
-                      ? <span className="safe">✅ Clean — no vulnerabilities found</span>
-                      : <><span className="count">{results.total_issues}</span> issues detected in {langInfo?.label}</>
+                      ? <span className="safe">✅ Clean — no vulnerabilities found!</span>
+                      : <><span className="count">{results.total_issues}</span> issues in {langInfo?.label}</>
                     }
                   </div>
                   <div className="severity-pills">
@@ -344,12 +482,12 @@ export default function App() {
                         onClick={() => { setSelected(selected === i ? null : i); jumpTo(v.line); }}>
                         <div className="vuln-top">
                           <span className="vuln-badge" style={{ background: s.bg, color: s.color }}>{s.label}</span>
-                          <span className="vuln-line">L{v.line}</span>
+                          <span className="vuln-line-num">L{v.line}</span>
                         </div>
                         <div className="vuln-title">{v.title}</div>
                         <div className="vuln-cwe">{v.cwe_id} — {v.cwe_name}</div>
                         {v.explanation && <div className="vuln-explain">{v.explanation}</div>}
-                        {v.impact && <div className="vuln-impact"><span className="vuln-impact-icon">⚠️</span>{v.impact}</div>}
+                        {v.impact && <div className="vuln-impact"><span className="vi-icon">⚠️</span>{v.impact}</div>}
                         {v.fixed_code && (
                           <div className="fix-section">
                             <button className="fix-btn" onClick={(e) => { e.stopPropagation(); setFixes((p) => ({ ...p, [i]: !p[i] })); }}>
@@ -369,4 +507,21 @@ export default function App() {
       </div>
     </div>
   );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   APP ROUTER
+   ═══════════════════════════════════════════════════════════════ */
+export default function App() {
+  const [page, setPage] = useState("landing"); // landing | language | scanner
+  const [lang, setLang] = useState("python");
+
+  const goToLangSelect = () => setPage("language");
+  const goToScanner = (selectedLang) => { setLang(selectedLang); setPage("scanner"); };
+  const goToLanding = () => setPage("landing");
+  const goBackFromScanner = () => setPage("language");
+
+  if (page === "landing") return <LandingPage onStart={goToLangSelect} />;
+  if (page === "language") return <LanguagePage onSelect={goToScanner} onBack={goToLanding} />;
+  return <ScannerPage lang={lang} onBack={goBackFromScanner} onChangeLang={(l) => { setLang(l); }} />;
 }
