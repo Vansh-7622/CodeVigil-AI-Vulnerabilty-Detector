@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import "./app.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_URL = "http://localhost:8000";
 
 const LANGS = [
   { id: "python", label: "Python", icon: "🐍", color: "#3572A5", ext: "main.py", mono: "python", desc: "Web backends, AI/ML, scripting" },
@@ -148,12 +148,12 @@ const SEV = {
 };
 
 const FEATURES = [
-  { icon: "🧠", title: "AI-Powered Analysis", desc: "Llama 3 explains each vulnerability in plain English with real-world impact scenarios" },
-  { icon: "🌳", title: "AST Deep Scanning", desc: "Python uses Abstract Syntax Tree parsing — not just regex — for accurate detection" },
-  { icon: "🔧", title: "Auto-Fix Suggestions", desc: "One-click secure code alternatives for every vulnerability found" },
-  { icon: "🌐", title: "5 Languages", desc: "Python, JavaScript, TypeScript, Java, and C/C++ with 60+ CWE patterns" },
-  { icon: "📋", title: "CWE Classification", desc: "Industry-standard Common Weakness Enumeration IDs for every finding" },
-  { icon: "⚡", title: "Instant Results", desc: "Fast scanning powered by Groq's inference engine — results in seconds" },
+  { icon: "🧠", title: "ML-Powered Analysis", desc: "Local ML model explains each vulnerability in plain English with real-world impact scenarios — no API needed", color: "#ef4444", glow: "rgba(239,68,68,0.35)", gradient: "linear-gradient(90deg,#ef4444,#f97316)" },
+  { icon: "🌳", title: "AST Deep Scanning", desc: "Python uses Abstract Syntax Tree parsing — not just regex — for accurate detection", color: "#22d472", glow: "rgba(34,212,114,0.35)", gradient: "linear-gradient(90deg,#22d472,#06b6d4)" },
+  { icon: "🔧", title: "Auto-Fix Suggestions", desc: "One-click secure code alternatives for every vulnerability found", color: "#a855f7", glow: "rgba(168,85,247,0.35)", gradient: "linear-gradient(90deg,#a855f7,#3b82f6)" },
+  { icon: "🌐", title: "5 Languages", desc: "Python, JavaScript, TypeScript, Java, and C/C++ with 60+ CWE patterns", color: "#4d9fff", glow: "rgba(77,159,255,0.35)", gradient: "linear-gradient(90deg,#4d9fff,#06b6d4)" },
+  { icon: "📋", title: "CWE Classification", desc: "Industry-standard Common Weakness Enumeration IDs for every finding", color: "#fbbf24", glow: "rgba(251,191,36,0.35)", gradient: "linear-gradient(90deg,#fbbf24,#f97316)" },
+  { icon: "⚡", title: "Zero Dependencies", desc: "Fully offline — runs on a local TF-IDF + Random Forest model with instant results", color: "#06b6d4", glow: "rgba(6,182,212,0.35)", gradient: "linear-gradient(90deg,#06b6d4,#22d472)" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -190,7 +190,7 @@ function LandingPage({ onStart }) {
           <span className="hero-gradient">before hackers do.</span>
         </h1>
         <p className="hero-sub">
-          CodeVigil scans your code using AST analysis and Llama 3 AI to detect security flaws,
+          CodeVigil scans your code using AST analysis and a local ML model to detect security flaws,
           explain their impact, and suggest fixes — across 5 programming languages.
         </p>
         <div className="hero-actions">
@@ -208,14 +208,56 @@ function LandingPage({ onStart }) {
           <div className="stat-divider" />
           <div className="hero-stat"><span className="stat-num">AI</span><span className="stat-label">Powered Fixes</span></div>
         </div>
+
+        <div className="hero-preview">
+          <div className="preview-window">
+            <div className="pw-header">
+              <div className="pw-dots">
+                <span style={{ background: "#ef4444" }} />
+                <span style={{ background: "#fbbf24" }} />
+                <span style={{ background: "#22d472" }} />
+              </div>
+              <span className="pw-title">codevigil — scan results</span>
+              <span className="pw-live"><span className="badge-dot" style={{ width: 5, height: 5, flexShrink: 0 }} /> live</span>
+            </div>
+            <div className="pw-body">
+              {[
+                { sev: "CRITICAL", color: "#ff3b3b", bg: "rgba(255,59,59,0.12)", name: "SQL Injection", cwe: "CWE-89", line: 32 },
+                { sev: "HIGH",     color: "#ff7a20", bg: "rgba(255,122,32,0.12)", name: "Command Injection", cwe: "CWE-78", line: 27 },
+                { sev: "MEDIUM",   color: "#fbbf24", bg: "rgba(251,191,36,0.12)", name: "Hardcoded Secret", cwe: "CWE-798", line: 6 },
+              ].map((item, i) => (
+                <div key={i} className="pw-item" style={{ borderLeftColor: item.color, animationDelay: `${0.7 + i * 0.15}s` }}>
+                  <span className="pwi-badge" style={{ background: item.bg, color: item.color }}>{item.sev}</span>
+                  <span className="pwi-name">{item.name}</span>
+                  <span className="pwi-cwe">{item.cwe}</span>
+                  <span className="pwi-line">:{item.line}</span>
+                </div>
+              ))}
+            </div>
+            <div className="pw-footer">
+              <span className="pw-ai-tag">✦ AI analysis complete</span>
+              <span className="pw-scan-time">0.8s</span>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="features" id="features">
         <h2 className="section-title">How it works</h2>
+        <p className="section-sub">Static analysis meets generative AI for deep, actionable security insights.</p>
         <div className="features-grid">
           {FEATURES.map((f, i) => (
-            <div key={i} className="feature-card" style={{ animationDelay: `${i * 0.1}s` }}>
-              <div className="feature-icon">{f.icon}</div>
+            <div
+              key={i}
+              className="feature-card"
+              style={{ animationDelay: `${i * 0.1}s`, "--icon-gradient": f.gradient, "--icon-glow": f.glow }}
+            >
+              <div
+                className="feature-icon-wrap"
+                style={{ background: `${f.color}18`, border: `1px solid ${f.color}28` }}
+              >
+                {f.icon}
+              </div>
               <h3>{f.title}</h3>
               <p>{f.desc}</p>
             </div>
@@ -227,9 +269,14 @@ function LandingPage({ onStart }) {
         <h2 className="section-title">Supported Languages</h2>
         <div className="lang-cards">
           {LANGS.map((l, i) => (
-            <div key={l.id} className="lang-card" style={{ animationDelay: `${i * 0.08}s` }} onClick={onStart}>
-              <div className="lang-card-icon">{l.icon}</div>
-              <div className="lang-card-dot" style={{ background: l.color }} />
+            <div
+              key={l.id}
+              className="lang-card"
+              style={{ animationDelay: `${i * 0.08}s`, "--lang-glow": `${l.color}14` }}
+              onClick={onStart}
+            >
+              <span className="lang-card-icon">{l.icon}</span>
+              <div className="lang-card-dot" style={{ background: l.color, "--lang-dot-glow": `${l.color}80` }} />
               <h4>{l.label}</h4>
               <p>{l.desc}</p>
             </div>
@@ -239,7 +286,7 @@ function LandingPage({ onStart }) {
 
       <footer className="landing-footer">
         <p>Built by <strong>Vansh Sorathiya</strong> • PDEU B.Tech CSE 2027</p>
-        <p className="footer-tech">FastAPI · React · Monaco Editor · Llama 3 via Groq · Python AST</p>
+        <p className="footer-tech">FastAPI · React · Monaco Editor · Local ML Model · Python AST</p>
       </footer>
     </div>
   );
@@ -264,7 +311,7 @@ function LanguagePage({ onSelect, onBack }) {
             <button
               key={l.id}
               className="lang-select-card"
-              style={{ animationDelay: `${i * 0.08}s` }}
+              style={{ animationDelay: `${i * 0.08}s`, "--lang-accent": l.color }}
               onClick={() => onSelect(l.id)}
             >
               <div className="lsc-icon">{l.icon}</div>
@@ -432,7 +479,21 @@ function ScannerPage({ lang, onBack, onChangeLang }) {
         <div className="results-panel">
           <div className="results-header">
             <span>🛡️ Vulnerability Report</span>
-            {results && <span className="rh-count">{results.total_issues} found</span>}
+            <div className="rh-right">
+              {results && <span className="rh-count">{results.total_issues} found</span>}
+              {results && results.total_issues > 0 && (
+                <button
+                  className="export-btn"
+                  onClick={() => {
+                    const blob = new Blob([JSON.stringify(results, null, 2)], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url; a.download = `codevigil-${lang}-report.json`; a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                >⬇ Export</button>
+              )}
+            </div>
           </div>
           <div className="results-content">
             {!results && !loading && !error && (
@@ -472,6 +533,15 @@ function ScannerPage({ lang, onBack, onChangeLang }) {
                       );
                     })}
                   </div>
+                  {results.model_confidence > 0 && (
+                    <div className="confidence-row">
+                      <span className="conf-label">ML confidence</span>
+                      <div className="conf-bar-wrap">
+                        <div className="conf-bar" style={{ width: `${Math.round(results.model_confidence * 100)}%` }} />
+                      </div>
+                      <span className="conf-pct">{Math.round(results.model_confidence * 100)}%</span>
+                    </div>
+                  )}
                 </div>
                 <div className="vuln-list">
                   {vulns.map((v, i) => {
@@ -482,7 +552,11 @@ function ScannerPage({ lang, onBack, onChangeLang }) {
                         onClick={() => { setSelected(selected === i ? null : i); jumpTo(v.line); }}>
                         <div className="vuln-top">
                           <span className="vuln-badge" style={{ background: s.bg, color: s.color }}>{s.label}</span>
-                          <span className="vuln-line-num">L{v.line}</span>
+                          <div className="vuln-top-right">
+                            {v.source === "ml_model" && <span className="source-badge ml">ML</span>}
+                            {v.source === "rule" && <span className="source-badge rule">RULE</span>}
+                            <span className="vuln-line-num">L{v.line}</span>
+                          </div>
                         </div>
                         <div className="vuln-title">{v.title}</div>
                         <div className="vuln-cwe">{v.cwe_id} — {v.cwe_name}</div>

@@ -4,3 +4,13 @@ dist/
 __pycache__/
 *.pyc
 .vite/
+
+# ML model and training data (can be large)
+data/
+model/*.joblib
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+*.egg-info/

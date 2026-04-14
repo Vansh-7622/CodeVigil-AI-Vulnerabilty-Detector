@@ -1,13 +1,21 @@
-# 🛡️ CodeVigil — AI-Powered Code Vulnerability Detector
+# CodeVigil — ML-Powered Security Vulnerability Detector
 
-CodeVigil is a hybrid **static analysis + LLM** security scanner. Paste code in the Monaco editor, click **Scan**, and get:
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18-61dafb?style=flat&logo=react)](https://react.dev/)
+[![Python](https://img.shields.io/badge/Python-3.10+-3572A5?style=flat&logo=python)](https://python.org)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-f7931e?style=flat&logo=scikitlearn)](https://scikit-learn.org/)
+
+CodeVigil is a hybrid **static-analysis + local ML** security scanner. Paste code in the Monaco editor, click **Scan**, and get:
 
 - Line-level vulnerability highlights with CWE classification
 - Plain-English explanations of *why* each finding is dangerous
-- Real-world impact assessment
-- Secure fix suggestions — powered by Llama 3.3 70B via Groq
+- Secure fix suggestions for every vulnerability
+- ML confidence score + per-finding source label (RULE vs ML)
+- Export full scan results as JSON
 
 **Supported languages:** Python · JavaScript · TypeScript · Java · C / C++
+
+> **Fully offline** — runs on a local TF-IDF + Random Forest model. No API keys needed.
 
 ---
 
@@ -50,58 +58,46 @@ CodeVigil is a hybrid **static analysis + LLM** security scanner. Paste code in 
 │  └── POST /scan/file   (multipart, auto-detects lang)    │
 │                  │                                       │
 │                  ▼                                       │
-│  scanner.py                                              │
-│  ├── Python  →  AST walk (PythonAnalyzer)                │
-│  ├── JS/TS   →  regex rules  (JS_RULES + TS_EXTRA)       │
-│  ├── Java    →  regex rules  (JAVA_RULES)                │
-│  └── C/C++   →  regex rules  (C_RULES)                   │
+│  ml_engine.py                                            │
+│  ├── rule_based_scan()  — 23 regex patterns              │
+│  ├── ml_predict()       — TF-IDF + Random Forest         │
+│  └── scan_code()        — merges both; ML fills gaps     │
 │                  │                                       │
-│                  │  list[Vulnerability]                  │
-│                  ▼                                       │
-│  llm_engine.py                                           │
-│  └── enrich_all()  — asyncio.gather, capped at 10        │
-│       └── Groq API  (llama-3.3-70b-versatile)            │
-│            returns: explanation · impact · fixed_code    │
+│  model/vuln_model.joblib  (pre-trained, local)           │
 └──────────────────────────────────────────────────────────┘
                                               │
                               JSON ScanResponse
-                              { vulnerabilities[], severity_counts, ... }
+                              { vulnerabilities[], severity_counts,
+                                model_confidence, ... }
 ```
 
 ### Key design decisions
 
 | Decision | Reason |
 |---|---|
-| Python uses AST; others use regex | AST tracks import aliases for accurate call resolution (e.g. `import subprocess as sp; sp.Popen(..., shell=True)`) |
-| LLM enrichment capped at 10 vulns | Controls Groq API latency and cost; vulns 11+ are returned without explanation |
-| Raw `httpx` instead of Groq SDK | Keeps dependencies minimal; Groq exposes an OpenAI-compatible REST endpoint |
+| Rules take priority over ML | Avoids noisy ML false-positives on well-understood patterns |
+| ML threshold at 0.85 confidence | Keeps per-line ML findings low false-positive |
+| `source` field on every finding | UI can show RULE vs ML badge per vulnerability |
+| No external API | Zero cold-start, zero keys, works fully offline |
 
 ---
 
-## Detected Vulnerability Patterns (60+)
+## Detected Vulnerability Patterns
 
-| CWE | Vulnerability | Severity | Languages |
-|---|---|---|---|
-| CWE-95 | Code Injection (`eval` / `exec` / `new Function`) | Critical | Python, JS, TS |
-| CWE-78 | OS Command Injection | Critical | Python, JS, Java, C |
-| CWE-89 | SQL Injection | Critical | Python, Java |
-| CWE-502 | Unsafe Deserialization (pickle, yaml, ObjectInputStream) | Critical | Python, JS, Java |
-| CWE-120 | Buffer Overflow (`gets`, `strcpy`, `sprintf`) | Critical/High | C/C++ |
-| CWE-79 | XSS (`innerHTML`, `dangerouslySetInnerHTML`) | High | JS, TS |
-| CWE-798 | Hardcoded Credentials | High | All |
-| CWE-611 | XXE (XML external entity) | High | Java |
-| CWE-22 | Path Traversal | High | Java |
-| CWE-134 | Format String | High | C/C++ |
-| CWE-328 | Weak Hashing (MD5 / SHA-1) | Medium | Python, JS, Java |
-| CWE-327 | Weak Cryptography (DES, ECB mode) | Medium | Java |
-| CWE-1321 | Prototype Pollution (`__proto__`) | Medium | JS, TS |
-| CWE-942 | Overly Permissive CORS | Medium | JS |
-| CWE-532 | Sensitive Data in Logs | Medium | JS, Java |
-| CWE-190 | Integer Overflow (`malloc` with multiply) | Medium | C/C++ |
-| CWE-704 | TypeScript `any` type bypass | Low | TS |
-| CWE-330 | Insufficient Randomness (`Math.random`, `rand()`) | Low | JS, TS, Java, C |
-| CWE-396 | Overly Broad Exception Handling (bare `except:`) | Low | Python |
-| CWE-617 | Reachable Assertion | Info | Python |
+| CWE | Vulnerability | Severity |
+|---|---|---|
+| CWE-79 | XSS (`innerHTML`, `dangerouslySetInnerHTML`, event handlers) | High |
+| CWE-89 | SQL Injection (string-concatenated queries) | Critical |
+| CWE-78 | Command Injection (`os.system`, `subprocess shell=True`, `Runtime.exec`) | Critical |
+| CWE-95 | Code Injection (`eval`, `exec`, `new Function`) | Critical |
+| CWE-502 | Unsafe Deserialization (`pickle.load`, `yaml.load`, `ObjectInputStream`) | Critical |
+| CWE-798 | Hardcoded Credentials (passwords, API keys, tokens in source) | High |
+| CWE-120 | Buffer Overflow (`gets`, `strcpy`, `sprintf`, `scanf`) | Critical |
+| CWE-328 | Weak Cryptography (MD5, SHA-1, DES, ECB mode) | Medium |
+| CWE-330 | Weak Randomness (`Math.random`, `random.random`) | Low |
+| CWE-134 | Format String (`printf(user_string)`) | High |
+| CWE-377 | Insecure Temp File (`mktemp`) | Medium |
+| CWE-532 | Sensitive Data in Logs (`console.log` with token/password) | Medium |
 
 ---
 
@@ -109,11 +105,11 @@ CodeVigil is a hybrid **static analysis + LLM** security scanner. Paste code in 
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 19, Vite, Monaco Editor (`@monaco-editor/react`) |
+| Frontend | React 18, Vite, Monaco Editor (`@monaco-editor/react`) |
 | Backend | FastAPI, Uvicorn, Pydantic v2 |
-| Scanner | Python `ast` module + regex engine |
-| LLM | Llama 3.3 70B via [Groq](https://console.groq.com) |
-| HTTP client | `httpx` (async) |
+| Scanner | 23-rule regex engine + sklearn ML model |
+| ML Model | TF-IDF Vectorizer → Random Forest Classifier (sklearn Pipeline) |
+| Serialization | joblib |
 
 ---
 
@@ -123,7 +119,6 @@ CodeVigil is a hybrid **static analysis + LLM** security scanner. Paste code in 
 
 - Python 3.10+
 - Node.js 18+
-- A free [Groq API key](https://console.groq.com)
 
 ### 1. Clone
 
@@ -137,21 +132,12 @@ cd CodeVigil-AI-Vulnerabilty-Detector
 ```bash
 cd backend
 pip install -r requirements.txt
-```
-
-Create `backend/.env`:
-
-```
-GROQ_API_KEY=your_groq_api_key_here
-```
-
-Start the server:
-
-```bash
 python main.py
 # API available at http://localhost:8000
 # Swagger docs at http://localhost:8000/docs
 ```
+
+No `.env` file needed — the backend is fully offline.
 
 ### 3. Frontend
 
@@ -162,15 +148,18 @@ npm run dev
 # App available at http://localhost:5173
 ```
 
-> **Custom backend URL:** set `VITE_API_URL` in `frontend/.env` if your backend runs elsewhere (e.g. on Render).
+### 4. (Optional) Retrain the ML Model
+
+```bash
+python model/train.py
+# Regenerates model/vuln_model.joblib from data/
+```
 
 ---
 
 ## API Reference
 
 ### `POST /scan`
-
-Scan code submitted as JSON.
 
 ```json
 // Request
@@ -184,17 +173,18 @@ Scan code submitted as JSON.
   "language": "python",
   "total_issues": 1,
   "severity_counts": { "critical": 1 },
+  "model_confidence": 0.91,
   "vulnerabilities": [
     {
       "line": 2,
       "severity": "critical",
       "cwe_id": "CWE-502",
-      "cwe_name": "Deserialization of Untrusted Data",
-      "title": "'pickle.load()' can execute arbitrary code",
-      "snippet": "pickle.load(f)",
-      "explanation": "...",
-      "impact": "...",
-      "fixed_code": "..."
+      "cwe_name": "Unsafe Deserialization",
+      "title": "Unsafe Deserialization",
+      "snippet": "pickle.load(",
+      "explanation": "pickle can execute arbitrary code during deserialization...",
+      "fixed_code": "Use JSON or MessagePack instead...",
+      "source": "rule"
     }
   ]
 }
@@ -202,7 +192,13 @@ Scan code submitted as JSON.
 
 ### `POST /scan/file`
 
-Upload a source file directly. Language is auto-detected from the file extension (`.py`, `.js`, `.ts`, `.java`, `.c`, `.cpp`). Pass `language` form field to override.
+Upload a source file directly. Language is auto-detected from extension (`.py`, `.js`, `.ts`, `.java`, `.c`, `.cpp`).
+
+### `GET /health`
+
+```json
+{ "status": "ok", "model": "local_ml", "api_dependencies": "none" }
+```
 
 ---
 
@@ -212,10 +208,12 @@ Upload a source file directly. Language is auto-detected from the file extension
 CodeVigil/
 ├── backend/
 │   ├── main.py          # FastAPI app, /scan and /scan/file endpoints
-│   ├── scanner.py       # AST + regex vulnerability detection engine
-│   ├── llm_engine.py    # Groq API integration, async enrichment
-│   ├── requirements.txt
-│   └── .env             # GROQ_API_KEY (not committed)
+│   ├── ml_engine.py     # Rule engine + ML model, scan_code() dispatcher
+│   └── requirements.txt
+├── model/
+│   ├── vuln_model.joblib  # Pre-trained sklearn pipeline (not committed if large)
+│   └── train.py           # Retraining script
+├── data/                  # Labeled training data (not committed)
 └── frontend/
     ├── src/
     │   ├── App.jsx      # All UI: LandingPage, LanguagePage, ScannerPage
@@ -229,6 +227,6 @@ CodeVigil/
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT
 
 Built by **Vansh Sorathiya** · PDEU B.Tech CSE 2027
